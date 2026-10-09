@@ -1,0 +1,452 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>POS & Card Terminal Emulator</title>
+    <style>
+        :root {
+            --bg-color: #f3f4f6;
+            --pos-bg: #ffffff;
+            --terminal-bg: #1e293b;
+            --terminal-screen: #0f172a;
+            --screen-text: #38bdf8;
+            --primary-btn: #2563eb;
+            --primary-hover: #1d4ed8;
+            --success: #10b981;
+            --danger: #ef4444;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg-color);
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        h1 {
+            color: #1f2937;
+            margin-bottom: 20px;
+        }
+
+        .container {
+            display: flex;
+            gap: 40px;
+            max-width: 1000px;
+            width: 100%;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        /* POS System Styling */
+        .pos-system {
+            background: var(--pos-bg);
+            border-radius: 12px;
+            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1), 0 2px 4px -1px rgba(0,0,0,0.06);
+            width: 400px;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .pos-header {
+            border-bottom: 2px solid #e5e7eb;
+            padding-bottom: 10px;
+            margin-bottom: 15px;
+            font-weight: bold;
+            font-size: 1.2rem;
+            color: #374151;
+        }
+
+        .menu-items {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .menu-btn {
+            background: #f9fafb;
+            border: 1px solid #d1d5db;
+            padding: 12px;
+            border-radius: 8px;
+            cursor: pointer;
+            text-align: left;
+            transition: all 0.2s;
+        }
+
+        .menu-btn:hover {
+            background: #f3f4f6;
+            border-color: #9ca3af;
+        }
+
+        .menu-btn .price {
+            float: right;
+            font-weight: bold;
+            color: #4b5563;
+        }
+
+        .cart-section {
+            border-top: 1px solid #e5e7eb;
+            padding-top: 15px;
+            flex-grow: 1;
+        }
+
+        .cart-title {
+            font-size: 0.9rem;
+            color: #6b7280;
+            text-transform: uppercase;
+            margin-bottom: 10px;
+        }
+
+        .cart-list {
+            list-style: none;
+            padding: 0;
+            margin: 0 max-height 150px;
+            overflow-y: auto;
+        }
+
+        .cart-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 6px 0;
+            font-size: 0.95rem;
+        }
+
+        .pos-totals {
+            border-top: 2px dashed #e5e7eb;
+            margin-top: 15px;
+            padding-top: 15px;
+        }
+
+        .total-row {
+            display: flex;
+            justify-content: space-between;
+            font-size: 1.2rem;
+            font-weight: bold;
+            color: #111827;
+            margin-bottom: 15px;
+        }
+
+        .checkout-btn {
+            background: var(--primary-btn);
+            color: white;
+            border: none;
+            padding: 14px;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: bold;
+            cursor: pointer;
+            width: 100%;
+            transition: background 0.2s;
+        }
+
+        .checkout-btn:hover {
+            background: var(--primary-hover);
+        }
+
+        .checkout-btn:disabled {
+            background: #9ca3af;
+            cursor: not-allowed;
+        }
+
+        /* Card Terminal Styling */
+        .terminal-wrapper {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .card-terminal {
+            background: var(--terminal-bg);
+            border-radius: 24px;
+            width: 280px;
+            padding: 25px;
+            box-shadow: 0 20px 25px -5px rgba(0,0,0,0.3);
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            position: relative;
+        }
+
+        .terminal-screen {
+            background: var(--terminal-screen);
+            border-radius: 8px;
+            height: 120px;
+            padding: 15px;
+            box-shadow: inset 0 2px 4px rgba(0,0,0,0.5);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            border: 2px solid #334155;
+        }
+
+        .screen-text {
+            color: var(--screen-text);
+            font-family: 'Courier New', Courier, monospace;
+            font-size: 1.1rem;
+            font-weight: bold;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            white-space: pre-line;
+        }
+
+        .terminal-keypad {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+        }
+
+        .key {
+            background: #334155;
+            color: #f8fafc;
+            border: none;
+            padding: 15px 0;
+            font-size: 1.2rem;
+            font-weight: bold;
+            border-radius: 8px;
+            cursor: pointer;
+            box-shadow: 0 2px 0px #1e293b;
+            transition: transform 0.05s;
+        }
+
+        .key:active {
+            transform: translateY(2px);
+            box-shadow: none;
+        }
+
+        .key.cancel { background: var(--danger); }
+        .key.clear { background: #eab308; color: #1e293b; }
+        .key.enter { background: var(--success); }
+
+        /* Quick Card Simulator Options */
+        .card-simulator {
+            margin-top: 20px;
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            width: 280px;
+            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);
+        }
+
+        .sim-title {
+            font-size: 0.85rem;
+            font-weight: bold;
+            color: #4b5563;
+            margin-bottom: 10px;
+            text-transform: uppercase;
+        }
+
+        .sim-buttons {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .sim-btn {
+            padding: 8px;
+            border: 1px solid #cbd5e1;
+            border-radius: 6px;
+            background: #f8fafc;
+            cursor: pointer;
+            font-size: 0.9rem;
+            transition: background 0.2s;
+            text-align: left;
+        }
+
+        .sim-btn:hover {
+            background: #edf2f7;
+        }
+        
+        .footer-note {
+            margin-top: 30px;
+            font-size: 0.85rem;
+            color: #6b7280;
+            text-align: center;
+            max-width: 500px;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>POS & Card Machine Sandbox</h1>
+
+    <div class="container">
+        <!-- POS System -->
+        <div class="pos-system">
+            <div class="pos-header">🛒 Register #1</div>
+            
+            <div class="menu-items">
+                <button class="menu-btn" onclick="addToCart('Coffee', 3.50)">☕ Coffee <span class="price">£3.50</span></button>
+                <button class="menu-btn" onclick="addToCart('Croissant', 2.80)">🥐 Croissant <span class="price">£2.80</span></button>
+                <button class="menu-btn" onclick="addToCart('Sandwich', 5.50)">🥪 Sandwich <span class="price">£5.50</span></button>
+                <button class="menu-btn" onclick="addToCart('Soda', 1.80)">🥤 Soda <span class="price">£1.80</span></button>
+            </div>
+
+            <div class="cart-section">
+                <div class="cart-title">Current Order</div>
+                <ul id="cart-list" class="cart-list">
+                    <!-- Items injected here -->
+                </ul>
+            </div>
+
+            <div class="pos-totals">
+                <div class="total-row">
+                    <span>Total:</span>
+                    <span id="pos-total">£0.00</span>
+                </div>
+                <button id="checkout-btn" class="checkout-btn" onclick="sendToTerminal()" disabled>Send to Terminal</button>
+            </div>
+        </div>
+
+        <!-- Terminal & Card Simulator -->
+        <div class="terminal-wrapper">
+            <div class="card-terminal">
+                <div class="terminal-screen">
+                    <div id="screen" class="screen-text">WELCOME
+READY</div>
+                </div>
+                
+                <div class="terminal-keypad">
+                    <button class="key" onclick="pressKey('1')">1</button>
+                    <button class="key" onclick="pressKey('2')">2</button>
+                    <button class="key" onclick="pressKey('3')">3</button>
+                    <button class="key" onclick="pressKey('4')">4</button>
+                    <button class="key" onclick="pressKey('5')">5</button>
+                    <button class="key" onclick="pressKey('6')">6</button>
+                    <button class="key" onclick="pressKey('7')">7</button>
+                    <button class="key" onclick="pressKey('8')">8</button>
+                    <button class="key" onclick="pressKey('9')">9</button>
+                    <button class="key cancel" onclick="pressKey('CANCEL')">❌</button>
+                    <button class="key" onclick="pressKey('0')">0</button>
+                    <button class="key clear" onclick="pressKey('CLEAR')">⌫</button>
+                    <button class="key enter" style="grid-column: span 3; padding: 12px;" onclick="pressKey('ENTER')">ENTER</button>
+                </div>
+            </div>
+
+            <!-- Simulation Controls -->
+            <div class="card-simulator">
+                <div class="sim-title">💳 Card Simulator Action</div>
+                <div class="sim-buttons">
+                    <button class="sim-btn" onclick="simulateCard('SUCCESS')">👋 Tap Approved Card</button>
+                    <button class="sim-btn" onclick="simulateCard('DECLINE')">❌ Tap Declined Card</button>
+                    <button class="sim-btn" onclick="simulateCard('TIMEOUT')">⏳ Force Timeout</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="footer-note">
+        This is a frontend sandbox mimicking a local POS-to-terminal integration environment (e.g. over WebSockets or local API). No real transactions are executed.
+    </div>
+
+    <script>
+        let cart = [];
+        let total = 0;
+        let terminalState = 'IDLE'; // IDLE, AWAITING_CARD, PROCESSING, SUCCESS, DECLINED
+        let currentAmount = 0;
+
+        function updateScreen(text) {
+            document.getElementById('screen').innerText = text.replace(/\n/g, '
+');
+        }
+
+        function addToCart(name, price) {
+            cart.push({name, price});
+            total += price;
+            renderCart();
+        }
+
+        function renderCart() {
+            const list = document.getElementById('cart-list');
+            list.innerHTML = '';
+            cart.forEach(item => {
+                const li = document.createElement('li');
+                li.className = 'cart-item';
+                li.innerHTML = `<span>${item.name}</span><span>£${item.price.toFixed(2)}</span>`;
+                list.appendChild(li);
+            });
+            document.getElementById('pos-total').innerText = `£${total.toFixed(2)}`;
+            document.getElementById('checkout-btn').disabled = cart.length === 0;
+        }
+
+        function sendToTerminal() {
+            if (total === 0) return;
+            currentAmount = total;
+            terminalState = 'AWAITING_CARD';
+            updateScreen(`TOTAL: £${currentAmount.toFixed(2)}
+TAP / INSERT CARD`);
+            document.getElementById('checkout-btn').disabled = true;
+        }
+
+        function simulateCard(outcome) {
+            if (terminalState !== 'AWAITING_CARD') {
+                alert('Send an order from the POS system to the terminal first!');
+                return;
+            }
+
+            terminalState = 'PROCESSING';
+            updateScreen("PROCESSING...
+PLEASE WAIT");
+
+            setTimeout(() => {
+                if (outcome === 'SUCCESS') {
+                    terminalState = 'SUCCESS';
+                    updateScreen("💥 APPROVED 💥
+THANK YOU");
+                    setTimeout(() => resetAll(true), 2500);
+                } else if (outcome === 'DECLINE') {
+                    terminalState = 'DECLINED';
+                    updateScreen("❌ DECLINED ❌
+TRY ANOTHER CARD");
+                    setTimeout(() => {
+                        terminalState = 'AWAITING_CARD';
+                        updateScreen(`TOTAL: £${currentAmount.toFixed(2)}
+TAP / INSERT CARD`);
+                    }, 2500);
+                } else if (outcome === 'TIMEOUT') {
+                    terminalState = 'IDLE';
+                    updateScreen("⏳ TIMEOUT
+TRANSACTION CANCELLED");
+                    setTimeout(() => resetAll(false), 2500);
+                }
+            }, 1500);
+        }
+
+        function pressKey(key) {
+            if (key === 'CANCEL') {
+                if (terminalState !== 'IDLE') {
+                    terminalState = 'IDLE';
+                    updateScreen("CANCELLED BY USER
+READY");
+                    setTimeout(() => resetAll(false), 1500);
+                }
+            } else if (key === 'ENTER') {
+                if (terminalState === 'AWAITING_CARD') {
+                    simulateCard('SUCCESS');
+                }
+            }
+        }
+
+        function resetAll(success) {
+            if (success) {
+                cart = [];
+                total = 0;
+                renderCart();
+            }
+            terminalState = 'IDLE';
+            updateScreen("WELCOME
+READY");
+            if (cart.length > 0) {
+                document.getElementById('checkout-btn').disabled = false;
+            }
+        }
+    </script>
+</body>
+</html>
